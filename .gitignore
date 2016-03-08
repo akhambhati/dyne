@@ -60,3 +60,8 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+### Project files and directory
+examples/
+*.pyc
+*.hdf
