@@ -1,1 +1,0 @@
-[["pipes.source.offline.MATSignal", {"cache": false, "win_disp": 0.5, "info_path": "Human_ECoG-info.mat", "win_len": 1.0, "signal_path": "Human_ECoG-seizure.mat", "pipe_name": "MATSignalSource"}], ["pipes.adjacency.correlation.Corr", {"cache": true, "pipe_name": "PearsonCorr"}]]
