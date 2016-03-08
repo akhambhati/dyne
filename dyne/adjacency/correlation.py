@@ -21,9 +21,6 @@ class XCorr(AdjacencyPipe):
     XCorr pipe for cross-correlation association between signals
 
     This class implements an FFT-based cross-correlation.
-
-    Parameters
-    ----------
     """
 
     def __init__(self):
@@ -68,6 +65,41 @@ class XCorr(AdjacencyPipe):
                 'time': {
                     'label': 'Time (sec)',
                     'index': np.float(ax_0_ix[-1])
+                }
+            }
+        }
+
+        return new_packet
+
+
+class Corr(AdjacencyPipe):
+    """
+    Corr pipe for Pearson correlation association between signals
+
+    This class implements a standard Pearson correlation measure.
+    """
+
+    def __init__(self):
+        self = self
+
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+        signal = signal_packet[hkey]['data']
+
+        # Apply Pearson correlation
+        adj = np.abs(np.corrcoef(signal.T))
+
+        new_packet = {}
+        new_packet[hkey] = {
+            'data': adj,
+            'meta': {
+                'ax_0': signal_packet[hkey]['meta']['ax_1'],
+                'ax_1': signal_packet[hkey]['meta']['ax_1'],
+                'time': {
+                    'label': 'Time (sec)',
+                    'index': np.float(
+                        signal_packet[hkey]['meta']['ax_0']['index'][-1])
                 }
             }
         }
