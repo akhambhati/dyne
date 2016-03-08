@@ -1,0 +1,35 @@
+[
+    {"PIPE_NAME": "SOURCE",
+     "PIPE_MODULE": "interface.randgen",
+     "PIPE_CLASS": "MvarNormalNoise",
+     "PIPE_PARAM": {
+         "win_shift": 256,
+         "n_node": 80,
+         "win_width": 512,
+         "n_sample": 30720}
+    },
+
+    {"PIPE_NAME": "Bandpass",
+     "PIPE_MODULE": "preproc.filters",
+     "PIPE_CLASS": "EllipticFilter",
+     "PIPE_PARAM": {
+         "Wp": [0.01, 0.4],
+         "Ws": [0.1, 0.29],
+         "Rp": 0.1,
+         "As": 60.0}
+    },
+
+    {"PIPE_NAME": "DisplayOutput",
+     "PIPE_MODULE": "logger.console",
+     "PIPE_CLASS": "Console",
+     "PIPE_PARAM": {
+         "description": "Pipe Out ---->"}
+    },
+
+    {"PIPE_NAME": "CachePipeline",
+     "PIPE_MODULE": "logger.cache",
+     "PIPE_CLASS": "SaveHDF",
+     "PIPE_PARAM": {
+         "cache_name": "./pipeline_output.hdf"}
+    }
+]
