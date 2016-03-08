@@ -22,27 +22,27 @@ class SaveHDF(LoggerPipe):
 
     Parameters
     ----------
-        cache_name: str
+        path: str
             Name of HDF cache file
     """
 
-    def __init__(self, cache_name):
+    def __init__(self, path):
 
         # Standard param checks
-        check_type(cache_name, str)
+        check_type(path, str)
 
         # Assign to instance
-        self.cache_name = cache_name
+        self.path = path
         self.new_hdf = True
 
 
     def _pipe_as_flow(self, signal_packet):
 
         if self.new_hdf:
-            df = h5py.File('{}'.format(self.cache_name), 'w')
+            df = h5py.File('{}'.format(self.path), 'w')
             self.new_hdf = False
         else:
-            df = h5py.File('{}'.format(self.cache_name), 'a')
+            df = h5py.File('{}'.format(self.path), 'a')
 
         def walk(dd, df):
             for key, value in dd.iteritems():
