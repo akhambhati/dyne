@@ -13,10 +13,11 @@ dependencies:
 - mkl=11.3.1=0
 - numpy=1.10.4=py27_0
 - openssl=1.0.2g=0
+- pandas=0.17.1=np110py27_0
 - path.py=8.1.2=py27_1
 - pexpect=3.3=py27_0
 - pickleshare=0.5=py27_0
-- pip=8.0.3=py27_0
+- pip=8.1.0=py27_0
 - pyparsing=2.0.3=py27_0
 - pyqt=4.11.4=py27_1
 - python=2.7.11=0
@@ -26,7 +27,7 @@ dependencies:
 - qt=4.8.7=1
 - readline=6.2=2
 - scipy=0.17.0=np110py27_0
-- setuptools=20.1.1=py27_0
+- setuptools=20.2.2=py27_0
 - simplegeneric=0.8.1=py27_0
 - sip=4.16.9=py27_0
 - six=1.10.0=py27_0
