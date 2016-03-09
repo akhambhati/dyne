@@ -5,6 +5,8 @@ Created by: Ankit Khambhati
 
 Change Log
 ----------
+2016/03/08 - Added AdjacencyPipe pipe type
+2016/03/08 - Added LoggerPipe, InterfacePipe, PreprocPipe pipe types
 2016/03/02 - Established the BasePipe
 """
 # Author: Ankit Khambhati
@@ -238,6 +240,7 @@ class InterfacePipe(BasePipe):
         None
         LoggerPipe
         PreprocPipe
+        AdjacencyPipe
     """
 
     def _verify_signal_packet(self, signal_packet):
@@ -265,7 +268,8 @@ class InterfacePipe(BasePipe):
 
     def get_valid_link(self):
         return [LoggerPipe,
-                PreprocPipe]
+                PreprocPipe,
+                AdjacencyPipe]
 
 
 class PreprocPipe(BasePipe):
@@ -312,6 +316,7 @@ class PreprocPipe(BasePipe):
         None
         LoggerPipe
         PreprocPipe
+        AdjacencyPipe
     """
 
     def _verify_signal_packet(self, signal_packet):
@@ -336,6 +341,88 @@ class PreprocPipe(BasePipe):
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_1']['label'], str)
         errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'], np.ndarray)
+
+    def get_valid_link(self):
+        return [LoggerPipe,
+                AdjacencyPipe]
+
+
+class AdjacencyPipe(BasePipe):
+    """
+    Pipe Type: AdjacencyPipe
+
+    Accepts
+    -------
+         signal_packet: dict
+            1) hashkey: dict
+                A) data: numpy.ndarray, shape: [n_sample x n_node]
+                    Windowed signal
+                B) meta: dict
+                    i. ax_0: dict
+                        a. label: str
+                            Describes unit of measurement for n_sample
+                        b. index: numpy.ndarray
+                            Time stamp for each sample
+                    ii. ax_1: dict
+                        a. label: str
+                            Describes what n_node represents
+                        b. index: numpy.ndarray
+                            String label for each node
+
+    Yields
+    ------
+        signal_packet: dict
+            1) hashkey: dict
+                A) data: numpy.ndarray, shape: [n_node x n_node]
+                    Connectivity between nodes
+                B) meta: dict
+                    i. ax_0: dict
+                        a. label: str
+                            Describes what n_node represents
+                        b. index: numpy.ndarray
+                            String label for each node
+                    ii. ax_1: dict
+                        a. label: str
+                            Describes what n_node represents
+                        b. index: numpy.ndarray
+                            String label for each node
+                    iii. time: dict
+                        a. label: str
+                            Describes the unit of measurement
+                        b. index: float
+                            Timestamp represented by this packet
+
+    Linkable pipe types:
+        None
+        LoggerPipe
+    """
+
+    def _verify_signal_packet(self, signal_packet):
+        """Ensure signal packet is organized properly"""
+        errors.check_type(signal_packet, dict)
+        if len(signal_packet.keys()) > 1:
+            raise ValueError('signal_packet base-level should contain only' +
+                             ' the pipe hash identifier as key')
+        hkey = signal_packet.keys()[0]
+
+        errors.check_has_key(signal_packet[hkey], 'data')
+        errors.check_has_key(signal_packet[hkey], 'meta')
+        errors.check_has_key(signal_packet[hkey]['meta'], 'ax_0')
+        errors.check_has_key(signal_packet[hkey]['meta'], 'ax_1')
+        errors.check_has_key(signal_packet[hkey]['meta']['ax_0'], 'label')
+        errors.check_has_key(signal_packet[hkey]['meta']['ax_0'], 'index')
+        errors.check_has_key(signal_packet[hkey]['meta']['ax_1'], 'label')
+        errors.check_has_key(signal_packet[hkey]['meta']['ax_1'], 'index')
+        errors.check_has_key(signal_packet[hkey]['meta']['time'], 'label')
+        errors.check_has_key(signal_packet[hkey]['meta']['time'], 'index')
+
+        errors.check_type(signal_packet[hkey]['data'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
+        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_1']['label'], str)
+        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['time']['label'], str)
+        errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
 
     def get_valid_link(self):
         return [LoggerPipe]
