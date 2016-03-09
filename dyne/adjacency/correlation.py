@@ -42,7 +42,6 @@ class XCorr(AdjacencyPipe):
         # Initialize adjacency matrix
         adj = np.zeros((len(ax_1_ix), len(ax_1_ix)))
 
-        #assoc = np.abs(np.corrcoef(signal.T))
         # Use FFT to compute cross-correlation
         signal_fft = np.fft.rfft(
             np.vstack((signal, np.zeros_like(signal))),
