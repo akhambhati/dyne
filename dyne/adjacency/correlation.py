@@ -8,7 +8,6 @@ Change Log
 2016/03/06 - Implemented XCorr and Corr pipes
 """
 
-
 from __future__ import division
 import numpy as np
 
