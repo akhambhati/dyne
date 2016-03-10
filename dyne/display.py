@@ -9,9 +9,7 @@ Change Log
 '''
 
 import sys
-import six
-import numpy as np
-import pprint
+
 
 def my_display(txt):
     '''

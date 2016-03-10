@@ -12,7 +12,6 @@ from __future__ import division
 import numpy as np
 import scipy.signal as spsig
 
-from display import my_display, pprint
 from errors import check_type
 from base import PreprocPipe
 
@@ -37,14 +36,6 @@ class EllipticFilter(PreprocPipe):
 
         As: float
             Stop band minimum attenuation (dB)
-
-    Attributes
-    ----------
-    b_: array
-        IIR filter numerator coefficients
-
-    a_: array
-        IIR filter denominator coefficients
     """
 
     def __init__(self, Wp, Ws, Rp, As):
@@ -86,5 +77,61 @@ class EllipticFilter(PreprocPipe):
         # Perform filtering and dump into signal_packet
         signal_packet[hkey]['data'] = spsig.filtfilt(
             coef_b, coef_a, signal_packet[hkey]['data'], axis=0)
+
+        return signal_packet
+
+
+class CommonAvgRef(PreprocPipe):
+    """
+    CommonAvgRef pipe for removing the common-average from the signal
+
+    """
+
+    def __init__(self):
+        self = self
+
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+
+        # Compute common average reference
+        data = signal_packet[hkey]['data']
+        data = (data.T - data.mean(axis=1)).T
+
+        # Dump into signal_packet
+        signal_packet[hkey]['data'] = data
+
+        return signal_packet
+
+
+class PreWhiten(PreprocPipe):
+    """
+    PreWhiten pipe for removing autocorrelative structure from each signal
+
+    Implements an AR(1) filter and passes forth the residuals
+    """
+
+    def __init__(self):
+        self = self
+
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+        ax_0_ix = signal_packet[hkey]['meta']['ax_0']['index']
+        data = signal_packet[hkey]['data']
+
+        win_white = np.zeros((data.shape[0]-1,
+                              data.shape[1]))
+        for i in xrange(data.shape[1]):
+            win_x = np.vstack((data[:-1, i],
+                               np.ones(data.shape[0]-1)))
+            w = np.linalg.lstsq(win_x.T, data[1:, i])[0]
+            win_white[:, i] = data[1:, i] - (data[:-1, i]*w[0] + w[1])
+
+        ax_0_ix = ax_0_ix[1:]
+
+        # Dump into signal_packet
+        signal_packet[hkey]['data'] = win_white
+        signal_packet[hkey]['meta']['ax_0']['index'] = ax_0_ix
 
         return signal_packet

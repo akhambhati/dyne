@@ -1,6 +1,16 @@
 """
-Exceptions and custom warnings for Dyne
+Define exceptions and warnings for DyNe
+
+Created by: Ankit Khambhati
+
+Change Log
+----------
+2016/03/10 - Generated __all__ definition
 """
+
+__all__ = ['PipeTypeError',
+           'PipeLinkError']
+
 
 class PipeTypeError(TypeError):
     """

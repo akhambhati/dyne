@@ -1,265 +1,185 @@
 """
-Classes for Coherence-based Association
+Coherence pipes for quantifying signal similarity (i.e. connectivity)
+
+Created by: Ankit Khambhati
+
+Change Log
+----------
+2016/03/06 - Implemented WelchCoh and MTCoh pipes
 """
 
 from __future__ import division
-from ...common.pipe import AdjacencyPipe
-import mcompare
 import numpy as np
 from mtspec import mt_coherence, mtspec
 from scipy.signal import coherence
 import matplotlib.pyplot as plt
 
+from errors import check_type
+from base import AdjacencyPipe
 
-class Coh(AdjacencyPipe):
+
+class WelchCoh(AdjacencyPipe):
     """
-    Coh class for spectral coherence estimation between sensors in incoming
-    signal
-
-    Association matrix between nodes using Welch's method for spectral
-    estimation determine associations.
+    WelchCoh pipe for spectral coherence estimation using Welch's method
 
     Parameters
     ----------
-    window: str
-        Desired window to use. See Scipy get_window for a list of windows.
-    secperseg: float
-        Length of each segment in seconds. Recommended half of window length.
-    pctoverlap: float (0<x<1)
-        Percent overlap between segments. Recommended values of 50 pct.
-    cf: tuple
-        Frequency range over which to compute coherence [-NW+C, C+NW]
-    alpha: float (default: 0.05)
-        Rejection rate to control false positives with surrogate testing
+        window: str
+            Desired window to use. See Scipy get_window for a list of windows.
+
+        secperseg: float
+            Length of each segment in seconds. Recommended half of window length.
+
+        pctoverlap: float (0<x<1)
+            Percent overlap between segments. Recommended values of 50 pct.
+
+        cf: list
+            Frequency range over which to compute coherence [-NW+C, C+NW]
     """
 
-    def __init__(self, pipe_name=None, window=None, secperseg=None,
-                 pctoverlap=None, cf=None, alpha=0.05, cache=None):
-        super(Coh, self).__init__(pipe_name, cache)
+    def __init__(self, window, secperseg, pctoverlap, cf):
+        # Standard param checks
+        check_type(window, str)
+        check_type(secperseg, float)
+        check_type(pctoverlap, float)
+        check_type(cf, list)
+        if not len(cf) == 2:
+            raise Exception('Must give a frequency range in list of length 2')
+        if (pctoverlap > 1) or (pctoverlap < 0):
+            raise Exception('Percent overlap must be a positive fraction')
 
-        assert type(window) == str
+        # Assign to instance
         self.window = window
-
-        assert type(secperseg) == float
         self.secperseg = secperseg
-
-        assert type(pctoverlap) == float
-        assert (pctoverlap > 0) and (pctoverlap < 1)
         self.pctoverlap = pctoverlap
-
-        assert type(cf) == tuple or type(cf) == list
         self.cf = cf
 
-        assert type(alpha) == float
-        self.alpha = alpha
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+        ax_0_ix = signal_packet[hkey]['meta']['ax_0']['index']
+        ax_1_ix = signal_packet[hkey]['meta']['ax_1']['index']
+        signal = signal_packet[hkey]['data']
+        fs = np.int(np.mean(1./np.diff(ax_0_ix)))
 
-    def _func_def(self, signal_packet):
-        """
-        Compute spectral coherence
+        # Assume undirected connectivity
+        triu_ix, triu_iy = np.triu_indices(len(ax_1_ix), k=1)
 
-        Parameters
-        ----------
-        signal_packet: dict
-            SEE ADJACENCY
+        # Initialize association matrix
+        adj = np.zeros((len(ax_1_ix), len(ax_1_ix)))
 
-        Returns
-        -------
-        signal_packet: dict
-            SEE ADJACENCY
-        """
-        def coh(signal, fs):
-            n_sample_win = signal.shape[0]
-            n_node = signal.shape[1]
+        # Derive signal segmenting for coherence estimation
+        nperseg = int(self.secperseg*fs)
+        noverlap = int(self.secperseg*fs*self.pctoverlap)
 
-            # Calculate connection sizes
-            triu_idx = np.triu_indices(n_node, k=1)
-            n_connect = int(0.5*n_node*(n_node-1))
+        freq, Cxy = coherence(signal[:, triu_ix],
+                              signal[:, triu_iy],
+                              fs=fs, window=self.window,
+                              nperseg=nperseg, noverlap=noverlap,
+                              axis=0)
 
-            # Initialize association matrix
-            assoc = np.zeros((n_node, n_node))
+        # Find closest frequency to the desired center frequency
+        cf_idx = np.flatnonzero((freq >= self.cf[0]) &
+                                (freq <= self.cf[1]))
 
-            # Test signal integrity
-            signal_stdev = np.std(signal, axis=0)
-            low_amp_var_idx = np.flatnonzero(signal_stdev < 1e-4)
-            if len(low_amp_var_idx) > 0:
-                return assoc
+        # Store coherence in association matrix
+        adj[triu_ix, triu_iy] = np.mean(Cxy[cf_idx, :], axis=0)
+        adj += adj.T
 
-            # Derive signal segmenting for coherence estimation
-            nperseg = int(self.secperseg*fs)
-            noverlap = int(self.secperseg*fs*self.pctoverlap)
+        new_packet = {}
+        new_packet[hkey] = {
+            'data': adj,
+            'meta': {
+                'ax_0': signal_packet[hkey]['meta']['ax_1'],
+                'ax_1': signal_packet[hkey]['meta']['ax_1'],
+                'time': {
+                    'label': 'Time (sec)',
+                    'index': np.float(ax_0_ix[-1])
+                }
+            }
+        }
 
-            # Compute all coherences
-            freq, Cxy = coherence(signal[:, triu_idx[0]],
-                                  signal[:, triu_idx[1]],
-                                  fs=fs, window=self.window,
-                                  nperseg=nperseg, noverlap=noverlap,
-                                  axis=0)
+        return new_packet
 
-            # Find closest frequency to the desired center frequency
-            cf_idx = np.flatnonzero((freq >= self.cf[0]) &
-                                    (freq <= self.cf[1]))
-
-            # Store coherence in association matrix
-            assoc[triu_idx[0], triu_idx[1]] = np.mean(Cxy[cf_idx, :], axis=0)
-
-            assoc += assoc.T
-
-            return assoc
-
-        signal = signal_packet['win']
-        fs = signal_packet['fs']
-
-        real_assoc = coh(signal, fs)
-
-        # If available use surrogate data, compute adjacency
-        if 'surr_win' in signal_packet.keys():
-            surr_win = signal_packet['surr_win']
-            surr_assoc = np.zeros((surr_win.shape[0],
-                                  surr_win.shape[2],
-                                  surr_win.shape[2]))
-            for s_idx, s_win in enumerate(surr_win):
-                surr_assoc[s_idx, :, :] = coh(s_win, fs)
-
-            # Get null merged distribution of associations
-            triu_idx = np.triu_indices(surr_win.shape[2], k=1)
-            null_assoc = surr_assoc[:, triu_idx[0], triu_idx[1]].reshape(-1)
-
-            # Compute p-value
-            pval_assoc = np.zeros_like(real_assoc)
-            for idx in xrange(len(triu_idx[0])):
-                assoc_val = real_assoc[triu_idx[0][idx], triu_idx[1][idx]]
-                n_sig_h0 = len(np.flatnonzero(null_assoc > assoc_val))
-                pval_assoc[triu_idx[0][idx], triu_idx[1][idx]] = \
-                    n_sig_h0 / len(null_assoc)
-            pval_assoc += pval_assoc.T
-
-            # Compute FDR
-            adj = mcompare.FDR(real_assoc, pval_assoc, alpha=self.alpha)
-        else:
-            adj = real_assoc
-
-        return adj
 
 class MTCoh(AdjacencyPipe):
     """
-    MTCoh class for multitaper coherence between sensors in incoming
-    signal
-
-    Association matrix between nodes using Pearson correlation to
-    determine associations.
+    MTCoh pipe for spectral coherence estimation using
+    multitaper methods
 
     Parameters
     ----------
-    NW: float
-        The time half bandwidth resolution of the estimate [-NW, NW];
-        such that resolution is 2*NW
-    k: int
-        Number of Slepian sequences to use (Usually < 2*NW-1)
-    cf: tuple
-        Frequency range over which to compute coherence [-NW+C, C+NW]
-    alpha: float (default: 0.05)
-        Rejection rate to control false positives with surrogate testing
+        time_band: float
+            The time half bandwidth resolution of the estimate [-NW, NW];
+            such that resolution is 2*NW
+
+        n_taper: int
+            Number of Slepian sequences to use (Usually < 2*NW-1)
+
+        cf: list
+            Frequency range over which to compute coherence [-NW+C, C+NW]
     """
 
-    def __init__(self, pipe_name=None, NW=None, k=None, cf=None, alpha=0.05,
-                 cache=None):
-        super(MTCoh, self).__init__(pipe_name, cache)
-        assert type(NW) == float
-        self.NW = NW
+    def __init__(self, time_band, n_taper, cf):
+        # Standard param checks
+        check_type(time_band, float)
+        check_type(n_taper, int)
+        check_type(cf, list)
+        if n_taper >= 2*time_band:
+            raise Exception('Number of tapers must be less than 2*time_band')
+        if not len(cf) == 2:
+            raise Exception('Must give a frequency range in list of length 2')
 
-        assert type(k) == int
-        self.k = k
-
-        assert type(cf) == tuple or type(cf) == list
+        # Assign instance parameters
+        self.time_band = time_band
+        self.n_taper = n_taper
         self.cf = cf
 
-        assert type(alpha) == float
-        self.alpha = alpha
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+        ax_0_ix = signal_packet[hkey]['meta']['ax_0']['index']
+        ax_1_ix = signal_packet[hkey]['meta']['ax_1']['index']
+        signal = signal_packet[hkey]['data']
+        fs = np.int(np.mean(1./np.diff(ax_0_ix)))
 
-    def _func_def(self, signal_packet):
-        """
-        Compute multitaper coherence
+        # Assume undirected connectivity
+        triu_ix, triu_iy = np.triu_indices(len(ax_1_ix), k=1)
 
-        Parameters
-        ----------
-        signal_packet: dict
-            SEE ADJACENCY
+        # Initialize association matrix
+        adj = np.zeros((len(ax_1_ix), len(ax_1_ix)))
 
-        Returns
-        -------
-        signal_packet: dict
-            SEE ADJACENCY
-        """
-        def coh(signal, fs):
-            n_sample_win = signal.shape[0]
-            n_node = signal.shape[1]
+        # Compute all coherences
+        for n1, n2 in zip(triu_ix, triu_iy):
+            out = mt_coherence(1.0/fs,
+                               signal[:, n1],
+                               signal[:, n2],
+                               self.time_band,
+                               self.n_taper,
+                               int(len(ax_0_ix)/2.), 0.95,
+                               iadapt=0,
+                               cohe=True, freq=True)
 
-            # Calculate connection sizes
-            triu_idx = np.triu_indices(n_node, k=1)
-            n_connect = int(0.5*n_node*(n_node-1))
+            # Find closest frequency to the desired center frequency
+            #cf_idx = np.argmin(np.abs(out['freq'] - self.cf))
+            cf_idx = np.flatnonzero((out['freq'] >= self.cf[0]) &
+                                    (out['freq'] <= self.cf[1]))
 
-            # Initialize association matrix
-            assoc = np.zeros((n_node, n_node))
+            # Store coherence in association matrix
+            adj[n1, n2] = np.mean(out['cohe'][cf_idx])
+        adj += adj.T
 
-            # Test signal integrity
-            signal_stdev = np.std(signal, axis=0)
-            low_amp_var_idx = np.flatnonzero(signal_stdev < 1e-4)
-            if len(low_amp_var_idx) > 0:
-                return assoc
+        new_packet = {}
+        new_packet[hkey] = {
+            'data': adj,
+            'meta': {
+                'ax_0': signal_packet[hkey]['meta']['ax_1'],
+                'ax_1': signal_packet[hkey]['meta']['ax_1'],
+                'time': {
+                    'label': 'Time (sec)',
+                    'index': np.float(ax_0_ix[-1])
+                }
+            }
+        }
 
-            # Compute all coherences
-            for idx_cnct in xrange(n_connect):
-                ix = triu_idx[0][idx_cnct]
-                iy = triu_idx[1][idx_cnct]
-
-                out = mt_coherence(1.0/fs, signal[:, ix], signal[:, iy],
-                                   self.NW, self.k,
-                                   int(n_sample_win/2), 0.95, iadapt=1,
-                                   cohe=True, freq=True)
-
-                # Find closest frequency to the desired center frequency
-                #cf_idx = np.argmin(np.abs(out['freq'] - self.cf))
-                cf_idx = np.flatnonzero((out['freq'] >= self.cf[0]) &
-                                        (out['freq'] <= self.cf[1]))
-
-                # Store coherence in association matrix
-                assoc[ix, iy] = np.mean(out['cohe'][cf_idx])
-
-
-            assoc += assoc.T
-
-            return assoc
-
-        signal = signal_packet['win']
-        fs = signal_packet['fs']
-
-        real_assoc = coh(signal, fs)
-
-        # If available use surrogate data, compute adjacency
-        if 'surr_win' in signal_packet.keys():
-            surr_win = signal_packet['surr_win']
-            surr_assoc = np.zeros((surr_win.shape[0],
-                                  surr_win.shape[2],
-                                  surr_win.shape[2]))
-            for s_idx, s_win in enumerate(surr_win):
-                surr_assoc[s_idx, :, :] = coh(s_win, fs)
-
-            # Get null merged distribution of associations
-            triu_idx = np.triu_indices(surr_win.shape[2], k=1)
-            null_assoc = surr_assoc[:, triu_idx[0], triu_idx[1]].reshape(-1)
-
-            # Compute p-value
-            pval_assoc = np.zeros_like(real_assoc)
-            for idx in xrange(len(triu_idx[0])):
-                assoc_val = real_assoc[triu_idx[0][idx], triu_idx[1][idx]]
-                n_sig_h0 = len(np.flatnonzero(null_assoc > assoc_val))
-                pval_assoc[triu_idx[0][idx], triu_idx[1][idx]] = \
-                    n_sig_h0 / len(null_assoc)
-            pval_assoc += pval_assoc.T
-
-            # Compute FDR
-            adj = mcompare.FDR(real_assoc, pval_assoc, alpha=self.alpha)
-        else:
-            adj = real_assoc
-
-        return adj
+        return new_packet
