@@ -13,6 +13,7 @@ import numpy as np
 
 from base import EdgeTopoPipe
 
+
 class EdgeSyncCentral(EdgeTopoPipe):
     """
     EdgeSyncCentral class for computing synchronizing/desynchronizing centrality
