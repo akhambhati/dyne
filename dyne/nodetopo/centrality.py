@@ -5,7 +5,7 @@ Created by: Ankit Khambhati
 
 Change Log
 ----------
-2016/03/06 - Implemented
+2016/03/10 - Implemented DegrCentral, EvecCentral, SyncCentral pipes
 """
 
 from __future__ import division
