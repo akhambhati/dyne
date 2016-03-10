@@ -21,7 +21,7 @@ import inspect
 import copy
 
 import display
-import exceptions
+import except_defs as exceptions
 import errors
 
 
@@ -106,7 +106,7 @@ class BasePipe(object):
                 if not any(check_pipe_type):
                     raise exceptions.PipeLinkError(
                         '%r must be one of the following pipe types: %r' %
-                        (downstream_pipe, val_pipe_type))
+                        (downstream_pipe, self.get_valid_link()))
                 self.downstream_pipe_flow.append(
                     downstream_pipe.apply_pipe_as_flow())
 
