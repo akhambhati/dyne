@@ -1,85 +1,56 @@
 """
-SOURCE: Offline signal sources class for interfacing sensor data with dyne
+Offline pipes for streaming in cached data
+
+Created by: Ankit Khambhati
+
+Change Log
+----------
+2016/03/10 - Implemented MATSignal pipe
 """
 
 import os.path
 import numpy as np
 import h5py
 
-from ..base import InterfacePipe
+import errors
+from base import InterfacePipe
 
 
 class MATSignal(InterfacePipe):
     """
-    MATSignal class for interfacing MATLAB multivariate signals in dyne
+    MATSignal pipe for interfacing neural signals stored in formatted MAT files
 
     This class interfaces external multivariate signals in MATLAB (v7.3) to the
     dyne framework.
 
     Parameters
     ----------
-    signal_path: str
-        Path or location to multivariate signal data
+        signal_path: str
+            Path to MAT-file containing neural signals
 
-    info_path: str
-        Path or location to global multivariate signal information
+        win_len: float
+            Time length of windows
 
-    win_len: float
-        Time length of windows
+        win_disp: float
+            Time displacement of consecutive windows
 
-    win_disp: float
-        Time displacement of consecutive windows
-
-    Attributes
-    ----------
-    n_node_: int
-        Number of network nodes corresponding to number of sensors in signal
-
-    n_sample_: int
-        Number of samples in signal
-
-    sample_frequency_: float
-        Number of samples per second of signal
-
-    signal_: ndarray, shape = [n_samples, n_nodes]
-        Loaded multivariate signal
-
-    nodes_: list(unicode)
-        List of node names corresponding to sensor/channel names in signal
-
-    n_sample_win: int
-        Sample length of windows
-
-    n_sample_disp: int
-        Sample displacement of consecutive windows
-
-    n_wins: int
-        Total number of windows in the signal
     """
 
-    def __init__(self, pipe_name=None, signal_path=None, info_path=None,
-                 win_len=None, win_disp=None, cache=None):
-        # Set input parameters
-        super(MATSignal, self).__init__(pipe_name, cache)
-        if not os.path.exists(signal_path):
-            raise IOError('**ERROR** %s does not exist' % (signal_path))
-        self.signal_path = signal_path
-
-        self.info_path = info_path
-
+    def __init__(self, signal_path, win_len, win_disp):
+        # Standard param checks
+        errors.check_type(signal_path, str)
+        errors.check_type(win_len, float)
+        errors.check_type(win_disp, float)
+        errors.check_path(signal_path, exist=True)
         if win_disp > win_len:
-            raise Exception('**ERROR** win_len (%0.2f) cannot be smaller than \
-                            win_disp (%0.2f)' % (win_len, win_disp))
+            raise ValueError('win_len cannot be shorter than win_disp')
+
+        # Assign to instance
+        self.signal_path = signal_path
         self.win_len = win_len
         self.win_disp = win_disp
 
-        # Initialize attributes
-        self.n_node_ = None
-        self.n_sample_ = None
-        self.sample_frequency_ = None
-        self.signal_ = None
-        self.node_ = None
-
+        # Open the MAT file and make sure all information is available
         self._cache_signal()
 
     def _cache_signal(self):
@@ -87,98 +58,67 @@ class MATSignal(InterfacePipe):
         try:
             df_signal = h5py.File(self.signal_path, 'r')
         except:
-            raise Exception('**ERROR** Could not load %s' % (self.signal_type))
-        try:
-            df_info = h5py.File(self.info_path, 'r')
-        except:
-            pass
+            raise IOError('Could not load %s with h5py' %
+                          self.signal_path)
 
-        # Get multivariate signal
+        # Check all components in place
+        errors.check_has_key(df_signal, 'evData')
+        errors.check_has_key(df_signal, 'Fs')
+        errors.check_has_key(df_signal, 'channels')
+
+        # Ensure evData is properly formatted
+        if not len(df_signal['evData'].shape) == 2:
+            raise ValueError('evData should have 2 dimensions')
         try:
-            df_signal['evData']
-            self.signal_ = df_signal['evData']
-            assert len(df_signal['evData'].shape) == 2
-            assert df_signal['evData'].shape[0] > df_signal['evData'].shape[1]
-            self.n_node_ = df_signal['evData'].shape[1]
-            self.n_sample_ = df_signal['evData'].shape[0]
-        except KeyError:
-            raise Exception('**ERROR** Signal does not contain evData')
-        except AssertionError:
-            raise Exception('**ERROR** Signal evData incorrectly formatted')
-        try:
-            iter(self.signal_)
+            iter(df_signal['evData'])
         except TypeError:
-            raise Exception("**ERROR** Signal type must be iterable")
+            raise TypeError('evData must be iterable')
+        self.signal_ = df_signal['evData']
+        self.n_node_ = df_signal['evData'].shape[1]
+        self.n_sample_ = df_signal['evData'].shape[0]
 
         # Get sampling frequency
-        try:
-            df_signal['Fs']
-            assert len(df_signal['Fs'].shape) == 2
-            assert np.dtype(df_signal['Fs']) == np.float64
-            self.sample_frequency_ = np.round(df_signal['Fs'][0, 0])
-        except KeyError:
-            raise Exception('**ERROR** Signal does not contain Fs')
-        except AssertionError:
-            raise Exception('**ERROR** Signal Fs is incorrectly formatted')
+        if not np.dtype(df_signal['Fs']) == np.float64:
+            raise TypeError('Fs should be a float64')
+        self.sample_frequency_ = df_signal['Fs'][0, 0]
 
-        # Get node labels from channel/sensor signal
-        try:
-            df_signal['channels']
-            assert(df_signal['channels'].shape[0] <
-                   df_signal['channels'].shape[1])
-            self.node_ = [u''.join(unichr(c) for c in df_signal[obj_ref])
-                          for obj_ref in df_signal['channels'][0, :]]
-        except KeyError:
-            self.node_ = [['CH%s' % idx] for idx in xrange(self.n_node_)]
-            print(self.node_)
-        except AssertionError:
-            raise Exception(
-                '**ERROR** Signal channels is incorrectly formatted')
-
-        # Get bad node labels from channel/sensor signal
-        try:
-            df_info['excludeChannels']
-            if len(df_info['excludeChannels'].shape) > 1:
-                assert(df_info['excludeChannels'].shape[0] <
-                       df_info['excludeChannels'].shape[1])
-                bad_node_ = [u''.join(unichr(c) for c in df_info[obj_ref])
-                             for obj_ref in df_info['excludeChannels'][0, :]]
-                # Remove Bad Nodes
-                node_idx = range(self.n_node_)
-                for bnode in bad_node_:
-                    try:
-                        node_idx.pop(self.node_.index(bnode))
-                        self.node_.remove(bnode)
-                    except:
-                        pass
-                self.n_node_ = len(self.node_)
-                self.signal_ = self.signal_[:, node_idx]
-        except (NameError, KeyError, AssertionError):
-            pass
+        # Get channel labels
+        if not df_signal['channels'].shape[0] < \
+           df_signal['channels'].shape[1]:
+            raise ValueError('Channels improperly stored, try transposing')
+        self.node_ = np.array(
+            [u''.join(unichr(c) for c in df_signal[obj_ref])
+             for obj_ref in df_signal['channels'][0, :]], dtype=np.str)
 
         # Check window size and displacement
-        self.n_sample_win = int(self.win_len * self.sample_frequency_)
-        self.n_sample_disp = int(self.win_disp * self.sample_frequency_)
+        self.n_win_len = int(self.win_len * self.sample_frequency_)
+        self.n_win_disp = int(self.win_disp * self.sample_frequency_)
+        if self.n_win_len > self.n_sample_:
+            raise ValueError('win_len cannot be longer than signal duration')
+        self.n_wins = ((self.n_sample_ - self.n_win_len) /
+                       self.n_win_disp) + 1
 
-        if self.n_sample_win > self.n_sample_:
-            raise Exception('**ERROR win_len (%0.2f) cannot be larger than \
-                            signal duration (%0.2f)' %
-                            (self.win_len,
-                             self.n_samples / self.sample_frequency_))
-        self.n_wins = ((self.n_sample_ - self.n_sample_win)
-                       / self.n_sample_disp) + 1
-
-    def _func_def(self):
+    def _pipe_as_source(self):
         for idx in range(0,
-                         self.n_wins*self.n_sample_disp,
-                         self.n_sample_disp):
+                         self.n_wins*self.n_win_disp,
+                         self.n_win_disp):
 
             # window nan adjust
-            win = self.signal_[idx:idx+self.n_sample_win, :]
+            win = self.signal_[idx:idx+self.n_win_len, :]
             nan_idx = np.nonzero(np.isnan(win))
             win[nan_idx[0], nan_idx[1]] = np.nanmean(win[:, nan_idx[1]], axis=0)
 
-            signal_packet = {'idx': idx+self.n_sample_win,
-                             'fs': self.sample_frequency_,
-                             'win': win}
+            # Format the signal_packet
+            signal_packet = {}
+            signal_packet['data'] = win
+            signal_packet['meta'] = \
+                {'ax_0':
+                 {'label': 'Time (sec)',
+                  'index': np.arange(idx, idx+self.n_win_len) /
+                                self.sample_frequency_},
+                 'ax_1':
+                 {'label': 'Nodes',
+                  'index': self.node_}
+                }
+
             yield signal_packet
