@@ -12,7 +12,6 @@ from __future__ import division
 import numpy as np
 import scipy.signal as spsig
 
-from display import my_display, pprint
 from errors import check_type
 from base import PreprocPipe
 
@@ -37,14 +36,6 @@ class EllipticFilter(PreprocPipe):
 
         As: float
             Stop band minimum attenuation (dB)
-
-    Attributes
-    ----------
-    b_: array
-        IIR filter numerator coefficients
-
-    a_: array
-        IIR filter denominator coefficients
     """
 
     def __init__(self, Wp, Ws, Rp, As):
@@ -86,5 +77,28 @@ class EllipticFilter(PreprocPipe):
         # Perform filtering and dump into signal_packet
         signal_packet[hkey]['data'] = spsig.filtfilt(
             coef_b, coef_a, signal_packet[hkey]['data'], axis=0)
+
+        return signal_packet
+
+
+class CommonAvgRef(PreprocPipe):
+    """
+    CommonAvgRef pipe for removing the common-average from the signal
+
+    """
+
+    def __init__(self):
+        self = self
+
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+
+        # Compute common average reference
+        data = signal_packet[hkey]['data']
+        data = (data.T - data.mean(axis=1)).T
+
+        # Perform filtering and dump into signal_packet
+        signal_packet[hkey]['data'] = data
 
         return signal_packet
