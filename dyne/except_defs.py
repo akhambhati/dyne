@@ -8,7 +8,6 @@ Change Log
 2016/03/10 - Generated __all__ definition
 """
 
-
 __all__ = ['PipeTypeError',
            'PipeLinkError']
 
