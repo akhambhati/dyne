@@ -1,46 +1,37 @@
 """
-Classes for centrality measures on network edges
+Centrality pipes for quantifying edge-based topology measurements
+
+Created by: Ankit Khambhati
+
+Change Log
+----------
+2016/03/10 - Implemented EdgeSyncCentral
 """
 
 from __future__ import division
-from ...common.pipe import EdgemetricPipe
 import numpy as np
 
+from base import EdgeTopoPipe
 
-class DriveSync(EdgemetricPipe):
+class EdgeSyncCentral(EdgeTopoPipe):
     """
-    DriveSync class for edge roles in global network synchronizability
+    EdgeSyncCentral class for computing synchronizing/desynchronizing centrality
+    of the edges
     """
 
-    def __init__(self, pipe_name=None, cache=None):
-        super(DriveSync, self).__init__(pipe_name, cache)
+    def __init__(self):
+        self = self
 
-    def _func_def(self, signal_packet):
-        """
-        Compute driven synchronizability
-
-        Parameters
-        ----------
-        signal_packet: dict
-            SEE EGDEMETRIC
-
-        Returns
-        -------
-        centrality: ndarray, shape: [1 x n_edge]
-            Vector of driven synchronizability for each edge
-        """
-
-        def lapl_sync(adj):
-            """
-            Compute synchronizability
-            """
+    def _pipe_as_flow(self, signal_packet):
+        def global_sync(adj_matr):
+            """Compute synchronizability"""
 
             # Get the degree vector of the adj
-            deg_vec = np.sum(adj, axis=0)
+            deg_vec = np.sum(adj_matr, axis=0)
             deg_matr = np.diag(deg_vec)
 
             # Laplacian
-            lapl = deg_matr - adj
+            lapl = deg_matr - adj_matr
 
             # Compute eigenvalues and eigenvectors, ensure they are real
             eigval, eigvec = np.linalg.eig(lapl)
@@ -52,21 +43,23 @@ class DriveSync(EdgemetricPipe):
 
             return sync
 
-        adj = signal_packet['adj']
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+        adj = signal_packet[hkey]['data']
+        triu_ix, triu_iy = np.triu_indices_from(adj, k=1)
 
-        # All non-significant connections are zero
-        adj[np.isnan(adj)] = 0
-        triu_idx = np.triu_indices_from(adj, k=1)
-
-        centrality = []
-        base_sync = lapl_sync(adj)
-        for n_ix, n_iy in zip(triu_idx[0], triu_idx[1]):
+        centrality = np.zeros_like(adj)
+        base_sync = global_sync(adj)
+        for n1, n2 in zip(triu_ix, triu_iy):
             adj_mod = adj.copy()
-            adj_mod[n_ix, n_iy] = 0
-            adj_mod[n_iy, n_ix] = 0
+            adj_mod[n1, n2] = 0
+            adj_mod[n2, n1] = 0
 
-            mod_sync = lapl_sync(adj_mod)
-            centrality.append((mod_sync-base_sync) / base_sync)
+            mod_sync = global_sync(adj_mod)
+            centrality[n1, n2] = (mod_sync-base_sync) / base_sync
+            centrality[n2, n1] = (mod_sync-base_sync) / base_sync
 
-        centrality = np.array(centrality)
-        return centrality
+        # Dump into signal_packet
+        signal_packet[hkey]['data'] = centrality
+
+        return signal_packet
