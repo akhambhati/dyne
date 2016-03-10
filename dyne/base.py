@@ -64,7 +64,11 @@ class BasePipe(object):
 
     def to_hash(self):
         """Return hashtag identifier of pipe parameters"""
-        return hashlib.sha224(self.to_JSON()).hexdigest()
+        fmt_str = '{}.{}: {}'.format(
+            self.__module__,
+            self.__class__.__name__,
+            self.to_JSON())
+        return hashlib.sha224(fmt_str).hexdigest()
 
     def _tag_signal_packet(self, signal_packet):
         """Tag the signal packet before sending it downstream"""
@@ -77,7 +81,7 @@ class BasePipe(object):
         """Replace the tag on signal packet before sending it downstream"""
         new_packet = {}
         new_packet[self.to_hash()] = \
-                signal_packet[signal_packet.keys()[0]]
+            signal_packet[signal_packet.keys()[0]]
 
         return new_packet
 
@@ -130,7 +134,7 @@ class BasePipe(object):
                 self.downstream_pipe_flow
             except AttributeError:
                 raise exceptions.PipeLinkError(
-                    '%r must be linked to downstream pipe using link() method' %
+                    '%r must link to downstream pipe using link() method' %
                     self.__class__.__name__)
 
             for downstream_pipe in self.downstream_pipe_flow:
@@ -168,7 +172,7 @@ class BasePipe(object):
                 self.downstream_pipe_flow
             except AttributeError:
                 raise exceptions.PipeLinkError(
-                    '%r must be linked to downstream pipe using link() method' %
+                    '%r must link to downstream pipe using link() method' %
                     self.__class__.__name__)
 
             for downstream_pipe in self.downstream_pipe_flow:
@@ -178,7 +182,7 @@ class BasePipe(object):
             downstream_pipe.close()
 
     def _verify_signal_packet(self, signal_packet):
-        """Signal packet must conform to organization prescribed by pipe type"""
+        """Signal packet must follow pipe type organization"""
         raise NotImplementedError(
             '%r does not have _verify_signal_packet implemented' %
             self.__class__.__name__)
@@ -204,7 +208,6 @@ class LoggerPipe(BasePipe):
         if len(signal_packet.keys()) > 1:
             raise ValueError('signal_packet base-level should contain only' +
                              ' the pipe hash identifier as key')
-        hkey = signal_packet.keys()[0]
 
     def get_valid_pipe(self):
         return []
@@ -262,9 +265,11 @@ class InterfacePipe(BasePipe):
 
         errors.check_type(signal_packet[hkey]['data'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'],
+                          np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_1']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'],
+                          np.ndarray)
 
     def get_valid_link(self):
         return [LoggerPipe,
@@ -338,9 +343,11 @@ class PreprocPipe(BasePipe):
 
         errors.check_type(signal_packet[hkey]['data'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'],
+                          np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_1']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'],
+                          np.ndarray)
 
     def get_valid_link(self):
         return [LoggerPipe,
@@ -419,9 +426,11 @@ class AdjacencyPipe(BasePipe):
 
         errors.check_type(signal_packet[hkey]['data'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'],
+                          np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_1']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'],
+                          np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['time']['label'], str)
         errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
 
@@ -498,7 +507,8 @@ class NodeTopoPipe(BasePipe):
 
         errors.check_type(signal_packet[hkey]['data'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'],
+                          np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['time']['label'], str)
         errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
 
