@@ -102,7 +102,6 @@ class WelchCoh(AdjacencyPipe):
         return new_packet
 
 
-
 class MTCoh(AdjacencyPipe):
     """
     MTCoh pipe for spectral coherence estimation using
