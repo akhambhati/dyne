@@ -344,6 +344,7 @@ class PreprocPipe(BasePipe):
 
     def get_valid_link(self):
         return [LoggerPipe,
+                PreprocPipe,
                 AdjacencyPipe]
 
 
