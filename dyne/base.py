@@ -5,12 +5,11 @@ Created by: Ankit Khambhati
 
 Change Log
 ----------
+2016/03/10 - Added NodeTopoPipe and EdgeTopoPipe pipe types
 2016/03/08 - Added AdjacencyPipe pipe type
 2016/03/08 - Added LoggerPipe, InterfacePipe, PreprocPipe pipe types
 2016/03/02 - Established the BasePipe
 """
-# Author: Ankit Khambhati
-# License: BSD 3-Clause
 
 import numpy as np
 

@@ -1,14 +1,13 @@
 """
-Classes for defining the generic pipes for the pipeline
+Pipeline control framework for instantiating, logging, and resuming
+complex pipelines
 
 Created by: Ankit Khambhati
 
 Change Log
 ----------
-2016/03/02 - Established the BasePipe
+2016/03/08 - Established the BasePipe
 """
-# Author: Ankit Khambhati
-# License: BSD 3-Clause
 
 import pandas as pd
 import json
@@ -18,6 +17,7 @@ import time
 
 import display
 import errors
+
 
 def _decode_list(data):
     rv = []

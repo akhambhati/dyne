@@ -1,6 +1,11 @@
 """
-Test sequences for simulating
-InterfacePipe functionality in DyNe
+Random signal generators to test pipes and pipelines
+
+Created by: Ankit Khambhati
+
+Change Log
+----------
+2016/03/08 - Implemented MvarNormalNoise pipe
 """
 
 import numpy as np
@@ -9,7 +14,6 @@ from display import my_display
 from errors import check_type
 from base import InterfacePipe
 
-__all__ = ['MvarNormalNoise']
 
 class MvarNormalNoise(InterfacePipe):
     """
