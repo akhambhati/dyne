@@ -499,7 +499,6 @@ class NodeTopoPipe(BasePipe):
         errors.check_type(signal_packet[hkey]['data'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
         errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'], np.ndarray)
-        errors.check_type(signal_packet[hkey]['meta']['ax_1']['index'], np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['time']['label'], str)
         errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
 
