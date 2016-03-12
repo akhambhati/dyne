@@ -16,7 +16,7 @@ in real-time or offline applications
     - Novel pipeline logging system to track experimental runs and parameters
 
     To upgrade to the release:
-        ``conda upgrade dyne2``
+        ``conda upgrade dyne``
 
 Using DyNe, you can construct complex pipelines to construct, analyze and
 visualize dynamic networks from multivariate neural signals. DyNe emerges from
