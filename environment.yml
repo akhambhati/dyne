@@ -18,7 +18,7 @@ dependencies:
 - mkl=11.3.1=0
 - numpy=1.10.4=py27_0
 - openssl=1.0.2g=0
-- pandas=0.17.1=np110py27_0
+- pandas=0.18.0=np110py27_0
 - path.py=8.1.2=py27_1
 - pexpect=3.3=py27_0
 - pickleshare=0.5=py27_0
