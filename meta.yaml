@@ -1,0 +1,25 @@
+package:
+    name: dyne
+    version: "0.5.0"
+
+source:
+    git_rev: 0.5.0
+    git_url: https://github.com/akhambhati/dyne.git
+
+requirements:
+    build:
+        - python ==2.7.11
+        - setuptools
+    run:
+        - python ==2.7.11
+        - h5py >=2.5.0
+        - numpy >=1.10
+        - scipy >=0.17
+        - pandas >=0.18
+        - mtspec >=0.3
+        - matplotlib >=1.5
+
+about:
+    home: http://dyne.readthedocs.org/
+    license: BSD 3-Clause
+    license_file: LICENSE.txt
