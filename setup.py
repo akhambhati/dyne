@@ -23,11 +23,11 @@ with open('./README.md', 'r') as rmf:
 # versioning
 import dyne
 setup(
-    name = 'dyne2',
+    name = 'dyne',
     version = dyne.__version__,
     author = 'Ankit Khambhati',
     author_email = 'akhambhati@gmail.com',
-    url = 'https://github.com/akhambhati/dyne2',
+    url = 'https://github.com/akhambhati/dyne',
     license = 'BSD-3',
     description = 'Dynamic network toolbox for real-time' +
                   ' and offline analysis of multivariate neural signals',

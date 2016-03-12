@@ -1,10 +1,10 @@
 package:
-    name: dyne2
+    name: dyne
     version: "0.5.0"
 
 source:
     git_rev: 0.5.0
-    git_url: https://github.com/akhambhati/dyne2.git
+    git_url: https://github.com/akhambhati/dyne.git
 
 requirements:
     build:
@@ -20,6 +20,6 @@ requirements:
         - matplotlib >=1.5
 
 about:
-    home: http://dyne2.readthedocs.org/
+    home: http://dyne.readthedocs.org/
     license: BSD 3-Clause
     license_file: LICENSE.txt
