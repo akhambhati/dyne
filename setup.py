@@ -23,7 +23,7 @@ with open('./README.md', 'r') as rmf:
 # versioning
 import dyne
 setup(
-    name = 'dyne',
+    name = 'dyne2',
     version = dyne.__version__,
     author = 'Ankit Khambhati',
     author_email = 'akhambhati@gmail.com',
