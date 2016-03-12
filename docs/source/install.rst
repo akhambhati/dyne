@@ -3,15 +3,14 @@
 ============
 Installation
 ============
-
 This section explains how to install DyNe.
 
 Python is prerequisite for running DyNe. To install DyNe, please select one of
 the following scenarios:
 
-    - :ref:`Installing DyNe and Python <new-to-python-and-dyne>`
-    - :ref:`Installing DyNe (I already have Python) <existing-python-new-dyne>`
-    - :ref:`Upgrading a DyNe installation <upgrading>`
+    - :ref:`Installing Python <new-to-python>`
+    - :ref:`Installing DyNe <new-to-dyne>`
+    - :ref:`Upgrading a DyNe installation <upgrade-dyne>`
 
 .. note::
 
@@ -19,58 +18,57 @@ the following scenarios:
      DyNe has not yet been tested on Windows.
 
 
-.. _new-to-python-and-dyne:
+.. _new-to-python:
 
-Installing DyNe and Python
+Installing Python
 --------------------------
-
 For new and experienced users, we **highly recommend** `installing Anaconda
 <https://www.continuum.io/downloads>`_. Anaconda conveniently
 installs Python and other commonly used packages for scientific computing and
 data science. Follow Anaconda's instructions for
-downloading and installing the Python 2.7 version.
+downloading and installing the Python 2.7.11 version.
 
 Once Anaconda is installed,
-proceed to the :ref:`next steps <existing-python-new-dyne>` for installing DyNe.
+proceed to the :ref:`next steps <new-to-dyne>` for installing DyNe.
 
 
-.. _existing-python-new-dyne:
+.. _new-to-dyne:
 
-Installing DyNe (I already have Python)
+Installing DyNe (I have Python)
 ---------------------------------------
-
 .. important::
+    **Prerequisite: DyNe installation requires Python 2.7.11**
 
-    **Prerequisite: DyNe installation requires Python 2.7**
-
-Using Anaconda and conda
-^^^^^^^^^^^^^^^^^^^^^^^^
-
+Easy Way (Using Conda)
+^^^^^^^^^^^^^^^^^^^^^^
 If Anaconda is installed, run the following command in the Terminal
 (Mac/Linux) or CommandPrompt (Windows) to install Jupyter::
 
-    conda install dyne2
+    conda create -n dyne python=2.7.11
+    source activate dyne
+    conda install dyne
 
-.. note::
+Advanced Way (Manual Install)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If Anaconda is installed and you would like access to DyNe source code,
+follow the following steps::
 
-    Some of DyNe's dependencies may require compilation,
-    in which case you would need the ability to compile Python C-extensions.
-    This means a C compiler and the Python headers.
-    On Debian-based systems (e.g. Ubuntu), you can get this with::
+    git clone --recursive https://github.com/akhambhati/dyne.git
+    cd dyne
+    conda env create -f environment.yml
+    source activate dyne
 
-        apt-get install build-essential python-dev
+External Packages
+^^^^^^^^^^^^^^^^^
+For most pipes, batteries are included. However a few pipes require
+installing packages manually. Please see the list below:
+    - adjacency.coherence.MTCoh -- `mtspec package <http://krischer.github.io/mtspec/>`_.
 
-    And on Fedora-based systems (e.g. Red Hat, CentOS)::
 
-        yum groupinstall 'Development Tools'
-        yum install python-devel
-
-
-.. _upgrading:
+.. _upgrade-dyne:
 
 Upgrading a DyNe installation
 -----------------------------
-
 **If using Anaconda**::
 
-    conda update dyne2
+    conda update dyne
