@@ -11,9 +11,9 @@ Change Log
 import numpy as np
 import h5py
 
-from display import my_display, pprint
-from errors import check_type
-from base import LoggerPipe
+from ..display import my_display
+from ..errors import check_type
+from ..base import LoggerPipe
 
 
 class SaveHDF(LoggerPipe):

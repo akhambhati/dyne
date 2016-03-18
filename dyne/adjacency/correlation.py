@@ -11,8 +11,8 @@ Change Log
 from __future__ import division
 import numpy as np
 
-from errors import check_type
-from base import AdjacencyPipe
+from ..errors import check_type
+from ..base import AdjacencyPipe
 
 
 class XCorr(AdjacencyPipe):
