@@ -10,9 +10,9 @@ Change Log
 
 import numpy as np
 
-from display import my_display
-from errors import check_type
-from base import InterfacePipe
+from ..display import my_display
+from ..errors import check_type
+from ..base import InterfacePipe
 
 
 class MvarNormalNoise(InterfacePipe):

@@ -11,7 +11,7 @@ Change Log
 from __future__ import division
 import numpy as np
 
-from base import NodeTopoPipe
+from ..base import NodeTopoPipe
 
 
 class DegrCentral(NodeTopoPipe):
