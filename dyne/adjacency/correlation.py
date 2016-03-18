@@ -5,6 +5,7 @@ Created by: Ankit Khambhati
 
 Change Log
 ----------
+2016/03/18 - Changed XCorr and Corr to __Mag and implement Corr (nonmag)
 2016/03/06 - Implemented XCorr and Corr pipes
 """
 
@@ -15,9 +16,9 @@ from ..errors import check_type
 from ..base import AdjacencyPipe
 
 
-class XCorr(AdjacencyPipe):
+class XCorrMag(AdjacencyPipe):
     """
-    XCorr pipe for cross-correlation association between signals
+    XCorrMag pipe for magnitude cross-correlation association between signals
 
     This class implements an FFT-based cross-correlation.
     """
@@ -70,6 +71,41 @@ class XCorr(AdjacencyPipe):
         return new_packet
 
 
+class CorrMag(AdjacencyPipe):
+    """
+    CorrMag pipe for magnitude Pearson correlation association between signals
+
+    This class implements a standard Pearson correlation measure.
+    """
+
+    def __init__(self):
+        self = self
+
+    def _pipe_as_flow(self, signal_packet):
+        # Get signal_packet details
+        hkey = signal_packet.keys()[0]
+        signal = signal_packet[hkey]['data']
+
+        # Apply Pearson correlation
+        adj = np.abs(np.corrcoef(signal.T))
+
+        new_packet = {}
+        new_packet[hkey] = {
+            'data': adj,
+            'meta': {
+                'ax_0': signal_packet[hkey]['meta']['ax_1'],
+                'ax_1': signal_packet[hkey]['meta']['ax_1'],
+                'time': {
+                    'label': 'Time (sec)',
+                    'index': np.float(
+                        signal_packet[hkey]['meta']['ax_0']['index'][-1])
+                }
+            }
+        }
+
+        return new_packet
+
+
 class Corr(AdjacencyPipe):
     """
     Corr pipe for Pearson correlation association between signals
@@ -86,7 +122,7 @@ class Corr(AdjacencyPipe):
         signal = signal_packet[hkey]['data']
 
         # Apply Pearson correlation
-        adj = np.abs(np.corrcoef(signal.T))
+        adj = np.corrcoef(signal.T)
 
         new_packet = {}
         new_packet[hkey] = {
