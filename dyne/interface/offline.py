@@ -12,8 +12,8 @@ import os.path
 import numpy as np
 import h5py
 
-import errors
-from base import InterfacePipe
+from ..errors import check_type, check_path, check_has_key
+from ..base import InterfacePipe
 
 
 class MATSignal(InterfacePipe):
@@ -38,10 +38,10 @@ class MATSignal(InterfacePipe):
 
     def __init__(self, signal_path, win_len, win_disp):
         # Standard param checks
-        errors.check_type(signal_path, str)
-        errors.check_type(win_len, float)
-        errors.check_type(win_disp, float)
-        errors.check_path(signal_path, exist=True)
+        check_type(signal_path, str)
+        check_type(win_len, float)
+        check_type(win_disp, float)
+        check_path(signal_path, exist=True)
         if win_disp > win_len:
             raise ValueError('win_len cannot be shorter than win_disp')
 
@@ -62,9 +62,9 @@ class MATSignal(InterfacePipe):
                           self.signal_path)
 
         # Check all components in place
-        errors.check_has_key(df_signal, 'evData')
-        errors.check_has_key(df_signal, 'Fs')
-        errors.check_has_key(df_signal, 'channels')
+        check_has_key(df_signal, 'evData')
+        check_has_key(df_signal, 'Fs')
+        check_has_key(df_signal, 'channels')
 
         # Ensure evData is properly formatted
         if not len(df_signal['evData'].shape) == 2:

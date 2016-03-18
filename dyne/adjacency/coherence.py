@@ -14,8 +14,8 @@ from mtspec import mt_coherence, mtspec
 from scipy.signal import coherence
 import matplotlib.pyplot as plt
 
-from errors import check_type
-from base import AdjacencyPipe
+from ..errors import check_type
+from ..base import AdjacencyPipe
 
 
 class WelchCoh(AdjacencyPipe):

@@ -12,8 +12,8 @@ from __future__ import division
 import numpy as np
 import scipy.signal as spsig
 
-from errors import check_type
-from base import PreprocPipe
+from ..errors import check_type
+from ..base import PreprocPipe
 
 
 class EllipticFilter(PreprocPipe):
