@@ -157,7 +157,7 @@ class MTCoh(AdjacencyPipe):
                                self.time_band,
                                self.n_taper,
                                int(len(ax_0_ix)/2.), 0.95,
-                               iadapt=0,
+                               iadapt=1,
                                cohe=True, freq=True)
 
             # Find closest frequency to the desired center frequency
