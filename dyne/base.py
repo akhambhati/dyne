@@ -5,6 +5,7 @@ Created by: Ankit Khambhati
 
 Change Log
 ----------
+2016/03/28 - Added GlobalTopoPipe pipe types
 2016/03/10 - Added NodeTopoPipe and EdgeTopoPipe pipe types
 2016/03/08 - Added AdjacencyPipe pipe type
 2016/03/08 - Added LoggerPipe, InterfacePipe, PreprocPipe pipe types
@@ -434,9 +435,76 @@ class AdjacencyPipe(BasePipe):
         errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
 
     def get_valid_link(self):
-        return [NodeTopoPipe,
+        return [GlobalTopoPipe,
+                NodeTopoPipe,
                 EdgeTopoPipe,
                 LoggerPipe]
+
+
+class GlobalTopoPipe(BasePipe):
+    """
+    Pipe Type: GlobalTopoPipe
+
+    Accepts
+    -------
+         signal_packet: dict
+            1) hashkey: dict
+                A) data: numpy.ndarray, shape: [n_node x n_node]
+                    Connectivity between nodes
+                B) meta: dict
+                    i. ax_0: dict
+                        a. label: str
+                            Describes what n_node represents
+                        b. index: numpy.ndarray
+                            String label for each node
+                    ii. ax_1: dict
+                        a. label: str
+                            Describes what n_node represents
+                        b. index: numpy.ndarray
+                            String label for each node
+                    iii. time: dict
+                        a. label: str
+                            Describes the unit of measurement
+                        b. index: float
+                            Timestamp represented by this packet
+
+    Yields
+    ------
+        signal_packet: dict
+            1) hashkey: dict
+                A) data: numpy.ndarray, shape: [1 x 1]
+                    Global topology measurement
+                B) meta: dict
+                    i. time: dict
+                        a. label: str
+                            Describes the unit of measurement
+                        b. index: float
+                            Timestamp represented by this packet
+
+    Linkable pipe types:
+        None
+        LoggerPipe
+    """
+
+    def _verify_signal_packet(self, signal_packet):
+        """Ensure signal packet is organized properly"""
+        errors.check_type(signal_packet, dict)
+        if len(signal_packet.keys()) > 1:
+            raise ValueError('signal_packet base-level should contain only' +
+                             ' the pipe hash identifier as key')
+        hkey = signal_packet.keys()[0]
+
+        errors.check_has_key(signal_packet[hkey], 'data')
+        errors.check_has_key(signal_packet[hkey], 'meta')
+        errors.check_has_key(signal_packet[hkey]['meta']['time'], 'label')
+        errors.check_has_key(signal_packet[hkey]['meta']['time'], 'index')
+
+        errors.check_type(signal_packet[hkey]['data'], np.ndarray)
+        errors.check_type(signal_packet[hkey]['meta']['time']['label'], str)
+        errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
+
+    def get_valid_link(self):
+        return [LoggerPipe]
 
 
 class NodeTopoPipe(BasePipe):

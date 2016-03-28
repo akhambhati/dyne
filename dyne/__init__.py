@@ -9,5 +9,6 @@ import interface
 import logger
 import preproc
 import adjacency
+import globaltopo
 import nodetopo
 import edgetopo
