@@ -5,6 +5,7 @@ Created by: Ankit Khambhati
 
 Change Log
 ----------
+2016/03/28 - Added GlobalTopoPipe pipe types
 2016/03/10 - Added NodeTopoPipe and EdgeTopoPipe pipe types
 2016/03/08 - Added AdjacencyPipe pipe type
 2016/03/08 - Added LoggerPipe, InterfacePipe, PreprocPipe pipe types
@@ -495,16 +496,10 @@ class GlobalTopoPipe(BasePipe):
 
         errors.check_has_key(signal_packet[hkey], 'data')
         errors.check_has_key(signal_packet[hkey], 'meta')
-        errors.check_has_key(signal_packet[hkey]['meta'], 'ax_0')
-        errors.check_has_key(signal_packet[hkey]['meta']['ax_0'], 'label')
-        errors.check_has_key(signal_packet[hkey]['meta']['ax_0'], 'index')
         errors.check_has_key(signal_packet[hkey]['meta']['time'], 'label')
         errors.check_has_key(signal_packet[hkey]['meta']['time'], 'index')
 
         errors.check_type(signal_packet[hkey]['data'], np.ndarray)
-        errors.check_type(signal_packet[hkey]['meta']['ax_0']['label'], str)
-        errors.check_type(signal_packet[hkey]['meta']['ax_0']['index'],
-                          np.ndarray)
         errors.check_type(signal_packet[hkey]['meta']['time']['label'], str)
         errors.check_type(signal_packet[hkey]['meta']['time']['index'], float)
 
