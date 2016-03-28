@@ -65,7 +65,6 @@ class MATSignal(InterfacePipe):
         # Check all components in place
         check_has_key(df_signal, 'evData')
         check_has_key(df_signal, 'Fs')
-        check_has_key(df_signal, 'channels')
 
         # Ensure evData is properly formatted
         if not len(df_signal['evData'].shape) == 2:
@@ -84,12 +83,15 @@ class MATSignal(InterfacePipe):
         self.sample_frequency_ = df_signal['Fs'][0, 0]
 
         # Get channel labels
-        if not df_signal['channels'].shape[0] < \
-           df_signal['channels'].shape[1]:
-            raise ValueError('Channels improperly stored, try transposing')
-        self.node_ = np.array(
-            [u''.join(unichr(c) for c in df_signal[obj_ref])
-             for obj_ref in df_signal['channels'][0, :]], dtype=np.str)
+        if 'channels' in df_signal.keys():
+            if not df_signal['channels'].shape[0] < \
+               df_signal['channels'].shape[1]:
+                raise ValueError('Channels improperly stored, try transposing')
+            self.node_ = np.array(
+                [u''.join(unichr(c) for c in df_signal[obj_ref])
+                 for obj_ref in df_signal['channels'][0, :]], dtype=np.str)
+        else:
+            self.node_ = np.array(map(str, np.arange(1, self.n_node_+1)))
 
         # Check window size and displacement
         self.n_win_len = int(self.win_len * self.sample_frequency_)
